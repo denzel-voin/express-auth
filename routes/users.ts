@@ -1,6 +1,8 @@
 import { Router, Request, Response } from "express";
 import bcrypt from "bcrypt";
 import { users } from "../data";
+import jsonwebtoken from 'jsonwebtoken';
+import authMiddleware from "../middleware/authMiddleware";
 
 const usersRouter = Router();
 
@@ -44,7 +46,20 @@ usersRouter.post("/login", (req: Request, res: Response): void => {
         return;
     }
 
-    res.status(200).json({ message: `Добрый день, ${user.name}!` });
+    const token = jsonwebtoken.sign(
+        {name: user.name},
+        process.env.SECRET_KEY as string,
+        {expiresIn: "1h"}
+    );
+
+    res.status(200).json({
+        message: `Добрый день, ${user.name}!`,
+        token,
+    });
 });
+
+usersRouter.get('/profile', authMiddleware, (req: Request, res: Response): void => {
+    res.status(200).json({message: users})
+})
 
 export default usersRouter;
