@@ -1,31 +1,46 @@
 import {Request, Response} from "express";
-import bcrypt from "bcrypt";
-import { PrismaClient } from '../../generated/prisma'
+import bcrypt from "bcryptjs";
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export const register = async (req: Request, res: Response): Promise<void> => {
-    const { name, password } = req.body;
+    console.log('Вызов register, тело:', req.body);
+    try {
+        const { name, password } = req.body;
 
-    if (!name || !password) {
-        res.status(400).json({ error: "Заполните имя и пароль" });
-        return;
-    }
-
-    const existingUser = await prisma.user.findUnique({ where: { name } });
-
-    if (existingUser) {
-        res.status(400).json({ error: "Такой пользователь уже существует" });
-        return;
-    }
-
-    const hashedPassword = bcrypt.hashSync(password, 10);
-
-    await prisma.user.create({
-        data: {
-            name,
-            password: hashedPassword
+        if (!name || !password) {
+            console.log('Нет имени или пароля');
+            res.status(400).json({ error: "Заполните имя и пароль" });
+            return;
         }
-    });
 
-    res.status(200).send("Пользователь зарегистрирован!");
+        console.log('Ищем пользователя с именем:', name);
+        const existingUser = await prisma.user.findUnique({ where: { name } });
+        console.log('Результат existingUser:', existingUser);
+
+        if (existingUser) {
+            console.log('Пользователь уже существует');
+            res.status(400).json({ error: "Такой пользователь уже существует" });
+            return;
+        }
+
+        console.log('Хешируем пароль');
+        const hashedPassword = bcrypt.hashSync(password, 10);
+        console.log('Хеш пароля:', hashedPassword);
+
+        console.log('Создаем пользователя в БД');
+        await prisma.user.create({
+            data: {
+                name,
+                password: hashedPassword,
+            },
+        });
+        console.log('Пользователь создан');
+
+        res.status(200).send("Пользователь зарегистрирован!");
+    } catch (error) {
+        console.error('Ошибка в register:', error);
+        res.status(500).json({ error: "Внутренняя ошибка сервера" });
+    }
 };
+
