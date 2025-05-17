@@ -1,1 +1,10 @@
 /node_modules
+/prisma/dev.db
+/prisma/dev.sqlite
+/prisma/*.db-journal
+/prisma/migrations/*
+!prisma/migrations/*.sql
+/generated/
+/node_modules/.prisma/
+.env
+.env.*
